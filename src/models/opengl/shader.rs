@@ -88,10 +88,6 @@ impl Shader {
         gl::GetUniformLocation(self.id, CString::new(name).unwrap().as_ptr())
     }
 
-    pub unsafe fn set_bool(&self, name: &str, value: bool) {
-        self.set_int(name, value as i32)
-    }
-
     pub unsafe fn set_int(&self, name: &str, value: i32) {
         gl::Uniform1i(self.get_uniform_loc(name), value)
     }

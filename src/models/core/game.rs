@@ -1,19 +1,22 @@
 use glfw::{Action, Key};
 use rand::Rng;
 
-use crate::models::{core::slot, opengl::{block_face::BlockFace, block_face_type::BlockFaceType, block_face_direction::BlockFaceDirection}};
+use crate::models::{opengl::{block_face::BlockFace, block_face_type::BlockFaceType, block_face_direction::BlockFaceDirection}};
 
 use super::{direction::Direction, grid::Grid, slot::Slot};
 
 pub struct Game {
     segments: Vec<(usize, usize)>,
     apple: (usize, usize),
-    width: usize,
-    height: usize,
     direction: Direction,
+    next_direction: Direction,
+    pub width: usize,
+    pub height: usize,
     pub grid: Grid,
     pub vertices: Vec<f32>,
-    pub apple_vertices: Vec<f32>
+    pub apple_vertices: Vec<f32>,
+    pub score: u32,
+    pub lost: bool
 }
 
 impl Game {
@@ -33,18 +36,15 @@ impl Game {
         let player_y = height / 2;
         let segments = vec![(player_x, player_y), (player_x - 1, player_y), (player_x - 2, player_y)];
        
-        let apple = Game::get_apple_loc(width, height);
+        let apple = Game::get_apple_loc(&segments, width, height);
 
-        Game { grid, segments, width, height, apple, vertices: vec![], apple_vertices: vec![], direction: Direction::Right }
+        let default_direction = Direction::Right;
+        Game { lost: false, score: 0, grid, segments, width, height, apple, vertices: vec![], apple_vertices: vec![], direction: default_direction, next_direction: default_direction }
     }
 
     pub fn update(&mut self) {
         //self.player.push((self.player[0].0 + 1, self.player[0].1))
         let mut next_position = self.segments[self.segments.len() - 1];
-        if next_position.0 == 0 || next_position.1 > 15
-            || next_position.1 == 0 || next_position.1 > 15 {
-            return;
-        }
 
         match self.direction {
             Direction::Up => {
@@ -60,22 +60,34 @@ impl Game {
                 next_position.0 += 1;
             }
         }
+        if self.grid.get(next_position.0, next_position.1) == Slot::Wall
+            || self.segments.contains(&next_position) {
+            self.lost = true;
+            return;
+        }
+
+        self.score += 5;
         self.segments.push(next_position);
 
         if self.apple == next_position {
-            self.apple = Game::get_apple_loc(self.width, self.height);
+            self.apple = Game::get_apple_loc(&self.segments, self.width, self.height);
+            self.score += 100;
         } else {
             // only delete last segment if apple was not eaten
             self.segments.remove(0);
         }
 
+        self.direction = self.next_direction;
         self.gen_mesh();
     }
 
-    pub fn get_apple_loc(width: usize, height: usize) -> (usize, usize) {
+    pub fn get_apple_loc(segments: &Vec<(usize, usize)>, width: usize, height: usize) -> (usize, usize) {
         let mut rng = rand::thread_rng();
         let x = rng.gen_range(1..width - 1);
         let y = rng.gen_range(1..height - 1);
+        if segments.contains(&(x, y)) {
+            return Game::get_apple_loc(&segments, width, height);
+        }
         (x, y)
     } 
 
@@ -84,7 +96,7 @@ impl Game {
             return;
         }
 
-        self.direction = match key {
+        self.next_direction = match key {
             Key::Up => {
                 if self.direction == Direction::Down {
                     return;
@@ -109,7 +121,7 @@ impl Game {
                 }
                 Direction::Left
             },
-            _ => self.direction
+            _ => self.next_direction
         }
     }
 
@@ -121,28 +133,33 @@ impl Game {
                 if slot == Slot::Air {
                     continue;
                 }
-                vertices.append(&mut Game::generate_block_vertices(slot, x as f32, y as f32, false));
+                vertices.append(&mut self.generate_block_vertices(slot, x as f32, y as f32, false));
             }
         }
 
         for i in 0..self.segments.len() - 1 {
             let segment = self.segments[i];
-            vertices.append(&mut Game::generate_block_vertices(Slot::Snek, segment.0 as f32, segment.1 as f32, false));
+            vertices.append(&mut self.generate_block_vertices(Slot::Snek, segment.0 as f32, segment.1 as f32, false));
         }
 
         let segment = self.segments[self.segments.len() - 1];
-        vertices.append(&mut Game::generate_block_vertices(Slot::Snek, segment.0 as f32, segment.1 as f32, true));
+        vertices.append(&mut self.generate_block_vertices(Slot::Sek, segment.0 as f32, segment.1 as f32, true));
 
         self.vertices = vertices;
-        println!("{:?}", self.apple);
-        self.apple_vertices = Game::generate_block_vertices(Slot::Apple, self.apple.0 as f32, self.apple.1 as f32, false);
+        self.apple_vertices = self.generate_block_vertices(Slot::Apple, self.apple.0 as f32, self.apple.1 as f32, false);
     }
 
-    fn generate_block_vertices(slot: Slot, x: f32, y: f32, is_head: bool) -> Vec<f32> {
+    fn generate_block_vertices(&self, slot: Slot, x: f32, y: f32, is_head: bool) -> Vec<f32> {
         let mut vertices = Vec::new();
         let mut block_face_type;
         if is_head {
-            block_face_type = BlockFaceType::SnekHead;
+
+            block_face_type = match self.direction {
+                Direction::Up => BlockFaceType::SnekHeadUpLeft,
+                Direction::Down | Direction::Right => BlockFaceType::SnekHeadUpLeft,
+                Direction::Left => BlockFaceType::SnekHeadUpRight
+            };
+
         } else {
             block_face_type = match slot {
                 Slot::Wall => BlockFaceType::Wall,

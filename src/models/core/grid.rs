@@ -3,7 +3,6 @@ use super::slot::{Slot, slot_to_u8, u8_to_slot};
 // two-dimensional arbitrary n-by-k map to represent grid
 pub struct Grid {
     map: Vec<u8>,
-    width: usize,
     height: usize
 }
 
@@ -18,20 +17,15 @@ impl Grid {
         // each section of map is represented with 2 bits
         // with 4 grid sections per byte
         let map = vec![slot_to_u8(Slot::Air); (height * width) / 4];
-        Grid { map, width, height }
+        Grid { map, height }
     }
 
     pub fn get(&self, x: usize, y: usize) -> Slot {
         let byte = self.map[y * self.height / 4 + x / 4];
         let index_in_byte = x % 4;
 
-        let mask = match index_in_byte {
-            0 => 0b00111111,
-            1 => 0b11001111,
-            2 => 0b11110011,
-            3 => 0b11111100,
-            _ => panic!("Invalid index (0-3)")
-        };
+        let mask = Grid::create_mask(index_in_byte);
+
         u8_to_slot((byte & !mask) >> (6 - index_in_byte * 2)) 
     }
 
@@ -42,15 +36,19 @@ impl Grid {
 
         let n = slot_to_u8(slot);
 
-        let mask = match index_in_byte {
+        let mask = Grid::create_mask(index_in_byte);
+
+        *byte = (*byte & mask) | (n << (3 - index_in_byte) * 2);
+    }
+
+    fn create_mask(index: usize) -> u8 {
+        match index {
             0 => 0b00111111,
             1 => 0b11001111,
             2 => 0b11110011,
             3 => 0b11111100,
-            _ => panic!("Invalid index (0-3)")
-        };
-
-        *byte = (*byte & mask) | (n << (3 - index_in_byte) * 2);
+            _ => panic!("Invalid index for mask creation (0-3)")
+        }
     }
 }
 

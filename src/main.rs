@@ -2,14 +2,14 @@ mod models;
 
 use std::{ffi::c_void, mem, ptr, sync::mpsc::Receiver, time::Instant};
 
-use cgmath::{Matrix4, vec3};
+use cgmath::vec3;
 use glfw::{Action, Context, Key, WindowEvent};
 use models::{core::game::Game};
 use crate::models::{opengl::{camera::Camera, shader::Shader, text_renderer::TextRenderer, texture::Texture}};
 use gl::types::*;
 
-const WIDTH: u32 = 1500;
-const HEIGHT: u32 = 1000;
+const WIDTH: u32 = 1200;
+const HEIGHT: u32 = 600;
 
 fn main() {
     // wrap program in helper
@@ -84,10 +84,6 @@ unsafe fn start() {
     let mut instant = Instant::now();
     let mut tick_timer = Instant::now();
 
-    let mut last_x = 0.0;
-    let mut last_y = 0.0;
-    let mut first_mouse = true;
-
     let text_renderer = TextRenderer::new(
         WIDTH, 
         HEIGHT, 
@@ -135,75 +131,66 @@ unsafe fn start() {
         t += 0.01;
 
         // events
-        process_events(
-            &mut window, 
-            &events, 
-            &mut camera, 
-            &mut game,
-            &mut last_x, 
-            &mut last_y, 
-            &mut first_mouse
-        );
+        process_events(&mut window, &events, &mut camera, &mut game);
         camera.update_position(deltatime);
 
         // clear buffers
         gl::ClearColor(0.2, 0.3, 0.3, 1.0);
         gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT); 
 
-        // draw text
-        text_renderer.render_text(format!("FPS: {}", (1000.0 / deltatime).round()).as_str(), 10.0, (HEIGHT as f32) - 30.0, 1.0, vec3(1.0, 0.0, 0.0));
-        text_renderer.render_text(format!("x: {:.0}", camera.position.x).as_str(), 10.0, (HEIGHT as f32) - 50.0, 0.6, vec3(1.0, 0.0, 0.0));
-        text_renderer.render_text(format!("y: {:.0}", camera.position.y).as_str(), 10.0, (HEIGHT as f32) - 70.0, 0.6, vec3(1.0, 0.0, 0.0));
-        text_renderer.render_text(format!("z: {:.0}", camera.position.z).as_str(), 10.0, (HEIGHT as f32) - 90.0, 0.6, vec3(1.0, 0.0, 0.0));
+        // draw
+        if (tick_timer.elapsed().as_millis() as f32) > 100.0 {
+            tick_timer = Instant::now();
+            game.update();
+            
+            if !game.lost {
+                gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
+                gl::BufferData(
+                    gl::ARRAY_BUFFER, 
+                    (mem::size_of::<f32>() * game.vertices.len()) as isize,
+                    game.vertices.as_ptr() as *const c_void, 
+                    gl::DYNAMIC_DRAW
+                );
+    
+                gl::BindBuffer(gl::ARRAY_BUFFER, apple_vbo);
+                gl::BufferData(
+                    gl::ARRAY_BUFFER, 
+                    (mem::size_of::<f32>() * game.apple_vertices.len()) as isize,
+                    game.apple_vertices.as_ptr() as *const c_void, 
+                    gl::STATIC_DRAW
+                );
+            }
+        }
+
+        text_renderer.render_text("BitSnake", 10.0, (HEIGHT as f32) - 60.0, 2.0, vec3(1.0, 0.0, 0.0));
+        text_renderer.render_text("BitSnake", 13.0, (HEIGHT as f32) - 63.0, 2.0, vec3(0.7, 0.14, 0.0));
+        text_renderer.render_text(format!("Score: {}", game.score).as_str(), 10.0, (HEIGHT as f32) - 100.0, 1.0, vec3(1.0, 0.0, 0.0));
+        text_renderer.render_text(format!("FPS: {}", (1000.0 / deltatime).round()).as_str(), 10.0, (HEIGHT as f32) - 130.0, 0.8, vec3(1.0, 0.0, 0.0));
+
+        if game.lost {
+            text_renderer.render_text("Game Over!", (WIDTH / 2) as f32 - 150.0, (HEIGHT / 2) as f32 - 5.0, 2.0, vec3(1.0, 0.0, 0.0));
+            text_renderer.render_text("Press r to restart", (WIDTH / 2) as f32 - 130.0, (HEIGHT / 2) as f32 - 50.0, 1.0, vec3(1.0, 0.0, 0.0));
+        }
 
         // bind texture
         texture_map.bind();
         shader.set_texture("texture_map", &texture_map);
 
-        // draw
-        if (tick_timer.elapsed().as_millis() as f32) > 200.0 {
-            tick_timer = Instant::now();
-            game.update();
-            gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
-            gl::BufferData(
-                gl::ARRAY_BUFFER, 
-                (mem::size_of::<f32>() * game.vertices.len()) as isize,
-                game.vertices.as_ptr() as *const c_void, 
-                gl::DYNAMIC_DRAW
-            );
-
-            gl::BindBuffer(gl::ARRAY_BUFFER, apple_vbo);
-            gl::BufferData(
-                gl::ARRAY_BUFFER, 
-                (mem::size_of::<f32>() * game.apple_vertices.len()) as isize,
-                game.apple_vertices.as_ptr() as *const c_void, 
-                gl::STATIC_DRAW
-            );
-        }
-
-        println!("binding vao and rendering");
         gl::BindVertexArray(vao);
         gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
         shader.use_program();
         shader.set_mat4("view", camera.get_view());
         shader.set_mat4("projection", camera.get_projection());
-        shader.set_mat4("model", Matrix4::<f32>::from_nonuniform_scale(3.0, 1.0, 1.0));
-        shader.set_float("time", t);
-
         gl::DrawArrays(gl::TRIANGLES, 0, game.vertices.len() as GLint); 
-        println!("Rendered");
 
         gl::BindVertexArray(apple_vao);
         gl::BindBuffer(gl::ARRAY_BUFFER, apple_vbo);
         apple_shader.use_program();
         apple_shader.set_mat4("view", camera.get_view());
         apple_shader.set_mat4("projection", camera.get_projection());
-        shader.set_mat4("model", Matrix4::<f32>::from_nonuniform_scale(3.0, 1.0, 1.0));
         apple_shader.set_float("time", t);
 
-        println!("Drawing apple VAO");
         gl::DrawArrays(gl::TRIANGLES, 0, game.apple_vertices.len() as GLint);
-        println!("Finished drawing");
 
         window.swap_buffers();
         glfw.poll_events();
@@ -213,7 +200,7 @@ unsafe fn start() {
     }
 }
 
-fn process_events(window: &mut glfw::Window, events: &Receiver<(f64, glfw::WindowEvent)>, camera: &mut Camera, game: &mut Game, last_x: &mut f32, last_y: &mut f32, first_mouse: &mut bool) {
+fn process_events(window: &mut glfw::Window, events: &Receiver<(f64, glfw::WindowEvent)>, camera: &mut Camera, game: &mut Game) {
     for (_, event) in glfw::flush_messages(events) {
         match event {
             WindowEvent::FramebufferSize(width, height) => {
@@ -222,25 +209,19 @@ fn process_events(window: &mut glfw::Window, events: &Receiver<(f64, glfw::Windo
             WindowEvent::Scroll(_, y_offset) => {
                 camera.scroll_callback(y_offset as f32);
             },
-            WindowEvent::CursorPos(xpos, ypos) => {
-                let (x_pos, y_pos) = (xpos as f32, ypos as f32);
-                let x_offset = x_pos - *last_x;
-                let y_offset = *last_y - y_pos;
-                *last_x = x_pos;
-                *last_y = y_pos;
-                if *first_mouse {
-                    *first_mouse = false;
-                    return;
-                }
-
-                camera.mouse_callback(x_offset, y_offset);
-            },
             WindowEvent::Key(Key::LeftShift, _, Action::Press, _) => camera.speed = 0.05,
             WindowEvent::Key(Key::LeftShift, _, Action::Release, _) => camera.speed = 0.008,
             WindowEvent::Key(Key::Escape, _, Action::Press, _) => window.set_should_close(true),
             WindowEvent::Key(key, _, action, _) => {
                 camera.process_keyboard(key, action);
-                game.process_keyboard(key, action);
+                if !game.lost {
+                    game.process_keyboard(key, action);
+                } else {
+                    if key == Key::R {
+                        *game = Game::new(game.width, game.height);
+
+                    }
+                }
             },
             _ => ()
         }

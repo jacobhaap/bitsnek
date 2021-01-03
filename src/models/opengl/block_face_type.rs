@@ -4,6 +4,7 @@
 pub enum BlockFaceType {
     Wall,
     Snek,
-    SnakeHead,
+    SnekHeadUpLeft,
+    SnekHeadUpRight,
     Apple
 }

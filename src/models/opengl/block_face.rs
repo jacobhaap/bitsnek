@@ -1,4 +1,4 @@
-use crate::models::{core::slot::Slot, opengl::block_face_type::BlockFaceType};
+use crate::models::{opengl::block_face_type::BlockFaceType};
 
 use super::block_face_direction::BlockFaceDirection;
 
@@ -84,7 +84,8 @@ fn face_to_vt(slot: BlockFaceType) -> f32 {
     match slot {
         BlockFaceType::Wall => 0.0,
         BlockFaceType::Snek => 1.0,
-        BlockFaceType::SnekHead => 2.0,
-        BlockFaceType::Apple => 3.0
+        BlockFaceType::SnekHeadUpLeft => 2.0,
+        BlockFaceType::SnekHeadUpRight => 4.0,
+        BlockFaceType::Apple => 5.0
     }
 }
