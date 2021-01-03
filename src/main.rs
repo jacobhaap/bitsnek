@@ -26,7 +26,7 @@ unsafe fn start() {
     glfw.window_hint(glfw::WindowHint::OpenGlForwardCompat(true)); 
 
     // glfw window creation
-    let (mut window, events) = glfw.create_window(WIDTH, HEIGHT, "RustySnake", glfw::WindowMode::Windowed)
+    let (mut window, events) = glfw.create_window(WIDTH, HEIGHT, "RustySnek", glfw::WindowMode::Windowed)
         .expect("Failed to create GLFW window");
 
     window.make_current();
@@ -35,7 +35,7 @@ unsafe fn start() {
     window.set_framebuffer_size_polling(true);
     window.set_scroll_polling(true);
     window.set_mouse_button_polling(true);
-    window.set_title("RustySnake");
+    window.set_title("RustySnek");
 
     // gl: load all OpenGL function pointers
     gl::load_with(|symbol| window.get_proc_address(symbol) as *const _);
