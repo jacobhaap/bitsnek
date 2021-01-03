@@ -1,19 +1,19 @@
 use crate::models::{core::slot::Slot, opengl::block_face_type::BlockFaceType};
 
-use super::direction::Direction;
+use super::block_face_direction::BlockFaceDirection;
 
 pub struct BlockFace {
     pub vertices: [f32; 30]
 }
 
 impl BlockFace {
-    pub fn new(face: BlockFaceType, direction: Direction) -> BlockFace {
+    pub fn new(face: BlockFaceType, direction: BlockFaceDirection) -> BlockFace {
         let vt_left = face_to_vt(face) - 2.0;
         let vt_right = vt_left + 1.0;
         let vt_top = 0.0;
         let vt_bottom = 1.0;
         let vertices = match direction {
-            Direction::Top => [
+            BlockFaceDirection::Top => [
                 -0.5,  0.5, -0.5,  vt_left,  vt_bottom,  // bottom-left
                  0.5,  0.5, -0.5,  vt_right, vt_bottom,  // bottom-right
                  0.5,  0.5,  0.5,  vt_right, vt_top,     // top-right
@@ -21,7 +21,7 @@ impl BlockFace {
                 -0.5,  0.5,  0.5,  vt_left,  vt_top,     // top-left
                 -0.5,  0.5, -0.5,  vt_left,  vt_bottom   // bottom-left
             ],
-            Direction::Bottom => [
+            BlockFaceDirection::Bottom => [
                 -0.5, -0.5, -0.5,  vt_left,  vt_bottom, // bottom-left
                  0.5, -0.5, -0.5,  vt_right, vt_bottom, // bottom-right
                  0.5, -0.5,  0.5,  vt_right, vt_top, // top-right
@@ -29,7 +29,7 @@ impl BlockFace {
                 -0.5, -0.5,  0.5,  vt_left,  vt_top, // top-left
                 -0.5, -0.5, -0.5,  vt_left,  vt_bottom  // bottom-left
             ],
-            Direction::Left => [
+            BlockFaceDirection::Left => [
                 -0.5,  0.5,  0.5,  vt_left, vt_top, // top-right
                 -0.5,  0.5, -0.5,  vt_right, vt_top, // bottom-right
                 -0.5, -0.5, -0.5,  vt_right,  vt_bottom, // bottom-left
@@ -37,7 +37,7 @@ impl BlockFace {
                 -0.5, -0.5,  0.5,  vt_left, vt_bottom, // bottom-right
                 -0.5,  0.5,  0.5,  vt_left, vt_top  // top-right
             ],
-            Direction::Right => [
+            BlockFaceDirection::Right => [
                 0.5,  0.5,  0.5,  vt_left, vt_top, // top-right
                 0.5,  0.5, -0.5,  vt_right, vt_top, // bottom-right
                 0.5, -0.5, -0.5,  vt_right,  vt_bottom, // bottom-left
@@ -46,7 +46,7 @@ impl BlockFace {
                 0.5,  0.5,  0.5,  vt_left, vt_top  // top-right
             ],
             // turn 90 degrees
-            Direction::Front => [
+            BlockFaceDirection::Front => [
                 -0.5, -0.5, -0.5,  vt_left,  vt_bottom, // bottom-left
                  0.5, -0.5, -0.5,  vt_right, vt_bottom, // bottom-right
                  0.5,  0.5, -0.5,  vt_right, vt_top,    // top-right
@@ -54,7 +54,7 @@ impl BlockFace {
                 -0.5,  0.5, -0.5,  vt_left,  vt_top,    // top-left
                 -0.5, -0.5, -0.5,  vt_left,  vt_bottom  // bottom-left
             ],
-            Direction::Back => [
+            BlockFaceDirection::Back => [
                 -0.5, -0.5,  0.5,  vt_left,  vt_bottom, // bottom-left
                  0.5, -0.5,  0.5,  vt_right, vt_bottom, // bottom-right
                  0.5,  0.5,  0.5,  vt_right, vt_top, // top-right
