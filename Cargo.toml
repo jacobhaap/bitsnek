@@ -1,5 +1,5 @@
 [package]
-name = "bitsnake"
+name = "bitsnek"
 version = "0.1.0"
 authors = ["ProfSucrose <dr.blobbles@gmail.com>"]
 edition = "2018"
