@@ -15,7 +15,7 @@ pub struct TextRenderer {
     char_cache: HashMap<usize, Character>, // cached glyph data calculated at construction
     vao: GLuint, // text rendering vertex attributes
     vbo: GLuint, // text rendering buffer
-    shader: Shader, // shader for text rendering
+    pub shader: Shader, // shader for text rendering
     screen_width: u32, // screen width
     screen_height: u32 // and screen height for calculating orthographic matrix
 }

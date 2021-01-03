@@ -1,4 +1,4 @@
-use cgmath::{Angle, Deg, InnerSpace, Matrix4, Point3, Vector3, perspective, vec3};
+use cgmath::{Deg, InnerSpace, Matrix4, Point3, Vector3, perspective, vec3};
 use glfw::{Action, Key};
 
 pub struct Camera {
@@ -20,7 +20,7 @@ pub struct Camera {
 impl Camera {
     pub fn new(screen_width: u32, screen_height: u32, speed: f32) -> Camera {
         Camera {
-            position: vec3(7.5, 50.0, 7.5),
+            position: vec3(7.5, 70.0, 7.5),
             front: vec3(0.0, -1.0, 0.000001),
             up: vec3(0.0, 1.0, 0.0),
             moving_forward: false,
@@ -68,30 +68,6 @@ impl Camera {
         if self.moving_left {
             self.position -= speed * self.front.cross(self.up).normalize()
         }
-    }
-
-    pub fn mouse_callback(&mut self, x_offset: f32, y_offset: f32) {
-        let sensitivity = 0.3;
-        let x_offset = x_offset * sensitivity;
-        let y_offset = y_offset * sensitivity;
-
-        self.yaw += x_offset;
-        self.pitch += y_offset;
-
-        // clamp pitch
-        if self.pitch > 89.0 {
-            self.pitch = 89.0;
-        } else if self.pitch < -89.0 {
-            self.pitch = -89.0;
-        }
-
-        let direction = vec3(
-            Deg(self.yaw).cos() * Deg(self.pitch).cos(),
-            Deg(self.pitch).sin(),
-            Deg(self.yaw).sin() * Deg(self.pitch).cos()
-        );
-        self.front = direction.normalize();
-        println!("{:?}", self.front);
     }
 
     pub fn scroll_callback(&mut self, y_offset: f32) {
