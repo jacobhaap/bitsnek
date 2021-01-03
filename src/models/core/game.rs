@@ -36,7 +36,7 @@ impl Game {
         let player_y = height / 2;
         let segments = vec![(player_x, player_y), (player_x - 1, player_y), (player_x - 2, player_y)];
        
-        let apple = Game::get_apple_loc(width, height);
+        let apple = Game::get_apple_loc(&segments, width, height);
 
         let default_direction = Direction::Right;
         Game { lost: false, score: 0, grid, segments, width, height, apple, vertices: vec![], apple_vertices: vec![], direction: default_direction, next_direction: default_direction }
@@ -70,7 +70,7 @@ impl Game {
         self.segments.push(next_position);
 
         if self.apple == next_position {
-            self.apple = Game::get_apple_loc(self.width, self.height);
+            self.apple = Game::get_apple_loc(&self.segments, self.width, self.height);
             self.score += 100;
         } else {
             // only delete last segment if apple was not eaten
@@ -81,10 +81,13 @@ impl Game {
         self.gen_mesh();
     }
 
-    pub fn get_apple_loc(width: usize, height: usize) -> (usize, usize) {
+    pub fn get_apple_loc(segments: &Vec<(usize, usize)>, width: usize, height: usize) -> (usize, usize) {
         let mut rng = rand::thread_rng();
         let x = rng.gen_range(1..width - 1);
         let y = rng.gen_range(1..height - 1);
+        if segments.contains(&(x, y)) {
+            return Game::get_apple_loc(&segments, width, height);
+        }
         (x, y)
     } 
 

@@ -8,8 +8,8 @@ use models::{core::game::Game};
 use crate::models::{opengl::{camera::Camera, shader::Shader, text_renderer::TextRenderer, texture::Texture}};
 use gl::types::*;
 
-const WIDTH: u32 = 800;
-const HEIGHT: u32 = 900;
+const WIDTH: u32 = 1200;
+const HEIGHT: u32 = 600;
 
 fn main() {
     // wrap program in helper
