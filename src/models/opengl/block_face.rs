@@ -83,8 +83,8 @@ impl BlockFace {
 fn face_to_vt(slot: BlockFaceType) -> f32 {
     match slot {
         BlockFaceType::Wall => 0.0,
-        BlockFaceType::Snake => 1.0,
-        BlockFaceType::SnakeHead => 2.0,
+        BlockFaceType::Snek => 1.0,
+        BlockFaceType::SnekHead => 2.0,
         BlockFaceType::Apple => 3.0
     }
 }
