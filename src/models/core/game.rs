@@ -25,7 +25,7 @@ impl Game {
 
         grid.set(1, 1, Slot::Apple);
         let player = vec![(width / 2, height / 2)];
-        grid.set(player[0].0, player[0].1, Slot::Snake);
+        grid.set(player[0].0, player[0].1, Slot::Snek);
 
         Game { player, grid, width, height, vertices: vec![] }
     }
@@ -34,7 +34,7 @@ impl Game {
         //self.player.push((self.player[0].0 + 1, self.player[0].1));
         self.grid.set(self.player[0].0, self.player[0].1, Slot::Air);
         self.player[0].0 = self.player[0].0 + 1;
-        self.grid.set(self.player[0].0, self.player[0].1, Slot::Snake);
+        self.grid.set(self.player[0].0, self.player[0].1, Slot::Snek);
 
         self.gen_mesh();
     }
@@ -58,11 +58,11 @@ impl Game {
         let mut vertices = Vec::new();
         let mut block_face_type;
         if is_head {
-            block_face_type = BlockFaceType::SnakeHead;
+            block_face_type = BlockFaceType::SnekHead;
         } else {
             block_face_type = match slot {
                 Slot::Wall => BlockFaceType::Wall,
-                Slot::Snake => BlockFaceType::Snake,
+                Slot::Snek => BlockFaceType::Snek,
                 Slot::Apple => BlockFaceType::Apple,
                 Slot::Air => panic!("Attempted to create block face from Slot::Air")
             };
@@ -71,10 +71,10 @@ impl Game {
         let top = BlockFace::new(block_face_type, Direction::Top)
             .transform(x, 0.0, y);
 
-        // only top is BlockFaceType::SnakeHead for head, other faces are 
-        // BlockFaceType::Snake 
+        // only top is BlockFaceType::SnekHead for head, other faces are 
+        // BlockFaceType::Snek
         if is_head {
-            block_face_type = BlockFaceType::Snake;
+            block_face_type = BlockFaceType::Snek;
         }
 
         let right = BlockFace::new(block_face_type, Direction::Right)
