@@ -2,7 +2,7 @@
 
 Simple Snake game written in Rust + OpenGL, with the constraint that the internal board can only be manipulated using bitwise operators
 
-![Image of Screenshot][https://storage.googleapis.com/u.filein.io/OJgCXYgsLo.png]
+<img src="https://storage.googleapis.com/u.filein.io/OJgCXYgsLo.png" width=512>
 
 ## Playing
 
