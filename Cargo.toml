@@ -1,5 +1,5 @@
 [package]
-name = "rustysnake"
+name = "bitsnake"
 version = "0.1.0"
 authors = ["ProfSucrose <dr.blobbles@gmail.com>"]
 edition = "2018"
