@@ -2,14 +2,14 @@ mod models;
 
 use std::{ffi::c_void, mem, ptr, sync::mpsc::Receiver, time::Instant};
 
-use cgmath::vec3;
-use glfw::{Action, Context, CursorMode, Key, WindowEvent};
-use models::{core::game::Game, opengl::{block_face::BlockFace, direction::Direction}};
-use crate::models::{core::slot::Slot, opengl::{block_face_type::BlockFaceType, camera::Camera, shader::Shader, text_renderer::TextRenderer, texture::Texture}};
+use cgmath::{Matrix4, vec3};
+use glfw::{Action, Context, Key, WindowEvent};
+use models::{core::game::Game};
+use crate::models::{opengl::{camera::Camera, shader::Shader, text_renderer::TextRenderer, texture::Texture}};
 use gl::types::*;
 
-const WIDTH: u32 = 1000;
-const HEIGHT: u32 = 600;
+const WIDTH: u32 = 1500;
+const HEIGHT: u32 = 1000;
 
 fn main() {
     // wrap program in helper
@@ -26,7 +26,7 @@ unsafe fn start() {
     glfw.window_hint(glfw::WindowHint::OpenGlForwardCompat(true)); 
 
     // glfw window creation
-    let (mut window, events) = glfw.create_window(WIDTH, HEIGHT, "RustySnake", glfw::WindowMode::Windowed)
+    let (mut window, events) = glfw.create_window(WIDTH, HEIGHT, "BitSnake", glfw::WindowMode::Windowed)
         .expect("Failed to create GLFW window");
 
     window.make_current();
@@ -35,7 +35,7 @@ unsafe fn start() {
     window.set_framebuffer_size_polling(true);
     window.set_scroll_polling(true);
     window.set_mouse_button_polling(true);
-    window.set_title("RustySnake");
+    window.set_title("BitSnake");
 
     // gl: load all OpenGL function pointers
     gl::load_with(|symbol| window.get_proc_address(symbol) as *const _);
@@ -44,6 +44,7 @@ unsafe fn start() {
     gl::Enable(gl::DEPTH_TEST);
 
     let shader = Shader::new("assets/shaders/vertex.vert", "assets/shaders/fragment.frag");
+    let apple_shader = Shader::new("assets/shaders/apple_vertex.vert", "assets/shaders/apple_fragment.frag");
     
     // create vertex array
     let mut vao = 0;
@@ -53,6 +54,22 @@ unsafe fn start() {
     let mut vbo = 0;
     gl::GenBuffers(1, &mut vbo);
     gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
+
+    // set vertex attribute pointers
+    // position
+    gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, 5 * std::mem::size_of::<GLfloat>() as GLsizei, ptr::null());
+    gl::EnableVertexAttribArray(0);
+    gl::VertexAttribPointer(1, 2, gl::FLOAT, gl::FALSE, 5 * std::mem::size_of::<GLfloat>() as GLsizei, (3 * std::mem::size_of::<GLfloat>()) as *const c_void);
+    gl::EnableVertexAttribArray(1);
+
+    // create second vertex array for apple
+    let mut apple_vao = 0;
+    gl::GenVertexArrays(1, &mut apple_vao);
+    gl::BindVertexArray(apple_vao);
+
+    let mut apple_vbo = 0;
+    gl::GenBuffers(1, &mut apple_vbo);
+    gl::BindBuffer(gl::ARRAY_BUFFER, apple_vbo);
 
     // set vertex attribute pointers
     // position
@@ -97,19 +114,32 @@ unsafe fn start() {
         gl::ARRAY_BUFFER, 
         (mem::size_of::<f32>() * game.vertices.len()) as isize,
         game.vertices.as_ptr() as *const c_void, 
-        gl::STATIC_DRAW
+        gl::DYNAMIC_DRAW
     );
 
+    gl::BindVertexArray(apple_vao);
+    gl::BindBuffer(gl::ARRAY_BUFFER, apple_vbo);
+    gl::BufferData(
+        gl::ARRAY_BUFFER, 
+        (mem::size_of::<f32>() * game.apple_vertices.len()) as isize,
+        game.apple_vertices.as_ptr() as *const c_void, 
+        gl::DYNAMIC_DRAW
+    );
+
+    let mut t = 0.02;
     // render loop
     while !window.should_close() {
         let deltatime = instant.elapsed().as_millis() as f32;
         instant = Instant::now();
+
+        t += 0.01;
 
         // events
         process_events(
             &mut window, 
             &events, 
             &mut camera, 
+            &mut game,
             &mut last_x, 
             &mut last_y, 
             &mut first_mouse
@@ -126,32 +156,54 @@ unsafe fn start() {
         text_renderer.render_text(format!("y: {:.0}", camera.position.y).as_str(), 10.0, (HEIGHT as f32) - 70.0, 0.6, vec3(1.0, 0.0, 0.0));
         text_renderer.render_text(format!("z: {:.0}", camera.position.z).as_str(), 10.0, (HEIGHT as f32) - 90.0, 0.6, vec3(1.0, 0.0, 0.0));
 
-        // shader uniforms
-        shader.use_program();
-        // transforms
-        shader.set_mat4("view", camera.get_view());
-        shader.set_mat4("projection", camera.get_projection());
-
         // bind texture
         texture_map.bind();
         shader.set_texture("texture_map", &texture_map);
 
         // draw
-        gl::BindVertexArray(vao);
-        gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
-
-        if (tick_timer.elapsed().as_millis() as f32) > 500.0 {
+        if (tick_timer.elapsed().as_millis() as f32) > 200.0 {
             tick_timer = Instant::now();
             game.update();
+            gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
             gl::BufferData(
                 gl::ARRAY_BUFFER, 
                 (mem::size_of::<f32>() * game.vertices.len()) as isize,
                 game.vertices.as_ptr() as *const c_void, 
+                gl::DYNAMIC_DRAW
+            );
+
+            gl::BindBuffer(gl::ARRAY_BUFFER, apple_vbo);
+            gl::BufferData(
+                gl::ARRAY_BUFFER, 
+                (mem::size_of::<f32>() * game.apple_vertices.len()) as isize,
+                game.apple_vertices.as_ptr() as *const c_void, 
                 gl::STATIC_DRAW
             );
         }
 
-        gl::DrawArrays(gl::TRIANGLES, 0, game.vertices.len() as GLint); // game.vertices.len() as GLint / 5);
+        println!("binding vao and rendering");
+        gl::BindVertexArray(vao);
+        gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
+        shader.use_program();
+        shader.set_mat4("view", camera.get_view());
+        shader.set_mat4("projection", camera.get_projection());
+        shader.set_mat4("model", Matrix4::<f32>::from_nonuniform_scale(3.0, 1.0, 1.0));
+        shader.set_float("time", t);
+
+        gl::DrawArrays(gl::TRIANGLES, 0, game.vertices.len() as GLint); 
+        println!("Rendered");
+
+        gl::BindVertexArray(apple_vao);
+        gl::BindBuffer(gl::ARRAY_BUFFER, apple_vbo);
+        apple_shader.use_program();
+        apple_shader.set_mat4("view", camera.get_view());
+        apple_shader.set_mat4("projection", camera.get_projection());
+        shader.set_mat4("model", Matrix4::<f32>::from_nonuniform_scale(3.0, 1.0, 1.0));
+        apple_shader.set_float("time", t);
+
+        println!("Drawing apple VAO");
+        gl::DrawArrays(gl::TRIANGLES, 0, game.apple_vertices.len() as GLint);
+        println!("Finished drawing");
 
         window.swap_buffers();
         glfw.poll_events();
@@ -161,7 +213,7 @@ unsafe fn start() {
     }
 }
 
-fn process_events(window: &mut glfw::Window, events: &Receiver<(f64, glfw::WindowEvent)>, camera: &mut Camera, last_x: &mut f32, last_y: &mut f32, first_mouse: &mut bool) {
+fn process_events(window: &mut glfw::Window, events: &Receiver<(f64, glfw::WindowEvent)>, camera: &mut Camera, game: &mut Game, last_x: &mut f32, last_y: &mut f32, first_mouse: &mut bool) {
     for (_, event) in glfw::flush_messages(events) {
         match event {
             WindowEvent::FramebufferSize(width, height) => {
@@ -188,6 +240,7 @@ fn process_events(window: &mut glfw::Window, events: &Receiver<(f64, glfw::Windo
             WindowEvent::Key(Key::Escape, _, Action::Press, _) => window.set_should_close(true),
             WindowEvent::Key(key, _, action, _) => {
                 camera.process_keyboard(key, action);
+                game.process_keyboard(key, action);
             },
             _ => ()
         }

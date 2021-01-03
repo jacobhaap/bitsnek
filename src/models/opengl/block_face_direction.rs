@@ -1,6 +1,6 @@
 // each possible cube face direction
 #[derive(Debug, Clone, Copy)]
-pub enum Direction {
+pub enum BlockFaceDirection {
     Top,
     Bottom,
     Left,
