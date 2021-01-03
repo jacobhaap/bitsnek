@@ -3,7 +3,7 @@
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum BlockFaceType {
     Wall,
-    Snake,
+    Snek,
     SnakeHead,
     Apple
 }
