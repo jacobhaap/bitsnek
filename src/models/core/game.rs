@@ -160,6 +160,7 @@ impl Game {
         // BlockFaceType::Snek 
         if is_head {
             block_face_type = BlockFaceType::Snek;
+
         } else if slot == Slot::Apple {
             return vertices;
         }

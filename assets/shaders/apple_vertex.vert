@@ -16,4 +16,4 @@ void main() {
     TexCoord = aTexCoord;
     position = aPos;
     aCoord = vec3(sin(time), aPos.y, cos(time));
-}
+    }

@@ -12,4 +12,4 @@ void main() {
     if (color.a < 0.1)
         discard;
     FragColor = vec4(vec3(color.r * aCoord.x, color.g, color.b * aCoord.z), 1.0);
-}
+    }
